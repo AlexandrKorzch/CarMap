@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layout xmlns:android="http://schemas.android.com/apk/res/android"
+        xmlns:app="http://schemas.android.com/apk/res-auto"
+        xmlns:bind="http://schemas.android.com/apk/res-auto"
+        xmlns:tools="http://schemas.android.com/tools">
+
+    <data>
+
+        <import type="android.view.View"/>
+
+        <variable
+            name="viewModel"
+            type="com.alex.car.flow.map.MapsViewModel"/>
+    </data>
+
+    <android.support.constraint.ConstraintLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
+
+        <fragment
+            android:id="@+id/map"
+            android:name="com.google.android.gms.maps.SupportMapFragment"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            app:layout_constraintBottom_toTopOf="@+id/et_start"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintHorizontal_bias="0.5"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            tools:context=".flow.map.MapsActivity"/>
+
+        <AutoCompleteTextView
+            android:id="@+id/et_start"
+            style="@style/AutoCompliteStyle"
+            android:hint="@string/start"
+            android:onTextChanged="@{viewModel.startPlaceTextChanged}"
+            android:visibility="@{viewModel.addIntermediate ? View.GONE : View.VISIBLE}"
+            app:layout_constraintBottom_toTopOf="@+id/et_end"
+            app:layout_constraintTop_toBottomOf="@+id/map"/>
+
+        <AutoCompleteTextView
+            android:id="@+id/et_end"
+            style="@style/AutoCompliteStyle"
+            android:hint="@string/next"
+            android:onTextChanged="@{viewModel.nextPlaceTextChanged}"
+            android:visibility="@{viewModel.addIntermediate ? View.GONE : View.VISIBLE}"
+            app:layout_constraintBottom_toTopOf="@+id/et_interMediate"
+            app:layout_constraintTop_toBottomOf="@+id/et_start"/>
+
+        <AutoCompleteTextView
+            android:id="@+id/et_interMediate"
+            style="@style/AutoCompliteStyle"
+            android:hint="@string/intermediate"
+            android:onTextChanged="@{viewModel.intermediateTextChanged}"
+            android:visibility="@{viewModel.addIntermediate ? View.VISIBLE : View.GONE}"
+            app:layout_constraintBottom_toTopOf="@+id/add_next_bt"
+            app:layout_constraintTop_toBottomOf="@+id/et_end"/>
+
+        <Button
+            android:id="@+id/add_next_bt"
+            android:layout_width="match_parent"
+            android:layout_height="@dimen/_40sdp"
+            android:text="@string/add_next_point"
+            android:onClick="@{()-> viewModel.addIntermediateClick()}"
+            android:visibility="@{viewModel.intermediateBt ? View.VISIBLE : View.GONE}"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/et_interMediate"/>
+
+        <Button
+            android:id="@+id/start_bt"
+            android:layout_width="wrap_content"
+            android:layout_height="@dimen/_40sdp"
+            android:layout_marginEnd="8dp"
+            android:layout_marginRight="8dp"
+            android:layout_marginTop="8dp"
+            android:onClick="@{()-> viewModel.startClick()}"
+            android:text="@string/start_bt"
+            android:visibility="@{viewModel.intermediateBt ? View.VISIBLE : View.GONE}"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toTopOf="parent"/>
+
+    </android.support.constraint.ConstraintLayout>
+</layout>
