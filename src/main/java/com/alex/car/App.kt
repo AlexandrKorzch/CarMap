@@ -1,11 +1,11 @@
 package com.alex.car
 
-import android.app.Application
 import android.content.Context
+import android.support.multidex.MultiDexApplication
 import io.realm.Realm
 
 
-class App : Application() {
+class App : MultiDexApplication() {
 
     init {
         instance = this

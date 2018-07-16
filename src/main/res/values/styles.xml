@@ -23,6 +23,7 @@
         <item name="android:layout_width">match_parent</item>
         <item name="android:layout_height">@dimen/_40sdp</item>
         <item name="android:inputType">text</item>
+        <item name="android:ems">10</item>
     </style>
 
 </resources>

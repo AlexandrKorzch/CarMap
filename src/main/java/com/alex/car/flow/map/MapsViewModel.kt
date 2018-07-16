@@ -6,41 +6,45 @@ import android.arch.lifecycle.LifecycleObserver
 import android.arch.lifecycle.OnLifecycleEvent
 import android.databinding.ObservableBoolean
 import android.os.Bundle
-import android.util.Log
+import com.alex.car.R
 import com.alex.car.base.BaseHandler
 import com.alex.car.base.BaseViewModel
 import com.alex.car.repo.Repository
+import com.alex.car.repo.remote.model.Rout
 import com.alex.car.util.END
 import com.alex.car.util.INTERMEDIATE
 import com.alex.car.util.START
+import com.alex.car.util.getRoutFlowables
 import com.google.android.gms.common.ConnectionResult
 import com.google.android.gms.common.api.GoogleApiClient
 import com.google.android.gms.location.LocationServices
 import com.google.android.gms.location.places.AutocompletePredictionBuffer
 import com.google.android.gms.location.places.Places
 import com.google.android.gms.maps.model.LatLng
+import com.google.maps.android.PolyUtil
+import io.reactivex.Flowable
+import io.reactivex.android.schedulers.AndroidSchedulers
 
 
 class MapsViewModel(context: Application, repository: Repository)
     : BaseViewModel<MapsViewModel.Handler>(context, repository),
         LifecycleObserver, GoogleApiClient.ConnectionCallbacks, GoogleApiClient.OnConnectionFailedListener {
 
-    val MAX_NEXT = 3
+    val MAX_INTERMADIATE = 3
 
     var startPlace: LatLng? = null
     var endPlace: LatLng? = null
     var intermediatePlaces = ArrayList<LatLng>()
 
-    val connected = ObservableBoolean(false)
+    val connected = ObservableBoolean(false) // not use
     val intermediateBt = ObservableBoolean(false)
     val addIntermediate = ObservableBoolean(false)
+    val rase = ObservableBoolean(false)
+
+    var steps = ArrayList<LatLng>()
 
     private lateinit var googleApiClient: GoogleApiClient
 
-    @OnLifecycleEvent(Lifecycle.Event.ON_CREATE)
-    fun onResume() {
-        initGoogleApiClient()
-    }
 
     fun startPlaceTextChanged(s: CharSequence, start: Int, before: Int, count: Int) {
         getPlacesByText(s.toString()) { getHandler().showStartPlaces(it) }
@@ -54,49 +58,50 @@ class MapsViewModel(context: Application, repository: Repository)
         getPlacesByText(s.toString()) { getHandler().showIntermediatePlaces(it) }
     }
 
-    fun addIntermediateClick(){
+    fun addIntermediateClick() {
         addIntermediate.set(true)
         getHandler().clearIntermediateText()
     }
 
-    fun startClick(){
-        Log.d("TAG", "startClick")
+    fun startClick() = requestRouts()
+
+    private fun requestRouts() {
+        addDisposable(Flowable
+                .concat(getRoutFlowables(repository, startPlace, intermediatePlaces, endPlace))
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe({ onGetRout(it) },
+                        {hideProgress()
+                            showError(getApplication<Application>().getString(R.string.error))
+                            showError(it.message)},
+                        { hideProgress()
+                            showRouts()}))
     }
 
-    private fun getPlacesByText(query: String, func: (buf: AutocompletePredictionBuffer) -> Unit) {
-        if (query.length >= 3) {
-            Places.GeoDataApi
-                    .getAutocompletePredictions(googleApiClient, query, null, null)
-                    .setResultCallback {func(it)}
-        }
+    private fun onGetRout(it: Rout?) {
+        steps.addAll(PolyUtil.decode(it?.routes?.first()?.overviewPolyline?.points))
     }
 
-    fun getCoordinatesByPlaceId(placeId: String?, pointType: Int) {
-        Places.GeoDataApi.getPlaceById(googleApiClient, placeId).setResultCallback {
-            if (it.status.isSuccess) {
-                val place = it.first()
-                when(pointType){
-                    START -> startPlace = place.latLng
-                    END -> endPlace = place.latLng
-                    INTERMEDIATE -> addToIntermediate(place.latLng)
-                }
-                checkIntermediateAllow()
-                getHandler().showPin()
-            }
-            it.release()
-        }
+    private fun showRouts() {
+        rase.set(true)
+        getHandler().showPolilines(steps)
+        getHandler().runCar(steps)
     }
 
     private fun checkIntermediateAllow() {
-        if(startPlace != null && endPlace != null){
+        if (startPlace != null && endPlace != null) {
             intermediateBt.set(true)
         }
     }
 
     private fun addToIntermediate(latLng: LatLng) {
-        if(intermediatePlaces.size < MAX_NEXT)intermediatePlaces.add(latLng)
-        else showError("No more then 5")
+        if (intermediatePlaces.size < MAX_INTERMADIATE) intermediatePlaces.add(latLng)
+        else showError(getApplication<Application>().getString(R.string.max_5))
     }
+
+
+    //google api client
+    @OnLifecycleEvent(Lifecycle.Event.ON_CREATE)
+    fun onCreate() = initGoogleApiClient()
 
     private fun initGoogleApiClient() {
         googleApiClient = GoogleApiClient.Builder(getApplication())
@@ -109,24 +114,56 @@ class MapsViewModel(context: Application, repository: Repository)
         googleApiClient.connect()
     }
 
+    private fun getPlacesByText(query: String, func: (buf: AutocompletePredictionBuffer) -> Unit) {
+        if (query.length >= 3) {
+            Places.GeoDataApi
+                    .getAutocompletePredictions(googleApiClient, query, null, null)
+                    .setResultCallback { func(it) }
+        }
+    }
+
+    fun getCoordinatesByPlaceId(placeId: String?, pointType: Int) {
+        Places.GeoDataApi.getPlaceById(googleApiClient, placeId).setResultCallback {
+            if (it.status.isSuccess) {
+                val place = it.first()
+                when (pointType) {
+                    START -> startPlace = place.latLng
+                    END -> endPlace = place.latLng
+                    INTERMEDIATE -> addToIntermediate(place.latLng)
+                }
+                checkIntermediateAllow()
+                getHandler().showPin()
+            }
+            it.release()
+        }
+    }
+
     override fun onConnected(p0: Bundle?) = connected.set(true)
 
     override fun onConnectionSuspended(p0: Int) {
-        connected.set(false)
-        showError("Connection Suspended")
+        showError(getApplication<Application>().getString(R.string.connection_suspended))
     }
 
     override fun onConnectionFailed(p0: ConnectionResult) {
-        connected.set(false)
-        showError("Connection Failed")
+        showError(getApplication<Application>().getString(R.string.connection_failed))
+    }
+
+    fun saveRoute(steps: ArrayList<LatLng>) {//todo work here
+
+
+
     }
 
 
+    //callback
     interface Handler : BaseHandler {
         fun showStartPlaces(buffer: AutocompletePredictionBuffer)
         fun showNextPlaces(buffer: AutocompletePredictionBuffer)
         fun showIntermediatePlaces(buffer: AutocompletePredictionBuffer)
+        fun showPolilines(steps: ArrayList<LatLng>)
         fun clearIntermediateText()
         fun showPin()
+        fun runCar(steps: ArrayList<LatLng>)
     }
 }
+

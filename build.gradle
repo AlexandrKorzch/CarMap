@@ -13,6 +13,7 @@ android {
         versionCode 1
         versionName "1.0"
         testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
+        multiDexEnabled true
     }
     buildTypes {
         release {
@@ -35,6 +36,8 @@ dependencies {
     implementation 'com.google.android.gms:play-services-maps:15.0.1'
     implementation 'com.google.android.gms:play-services-places:15.0.1'
     implementation 'com.google.android.gms:play-services-location:15.0.1'
+    implementation 'com.google.maps:google-maps-services:0.1.20'
+    implementation 'com.google.maps.android:android-maps-utils:0.5'
 
     //kotlin
     implementation"org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlin_version"
@@ -68,4 +71,7 @@ dependencies {
 
     //progress dialog
     implementation 'com.github.d-max:spots-dialog:0.7@aar'
+
+    //multidex
+    implementation 'com.android.support:multidex:1.0.3'
 }

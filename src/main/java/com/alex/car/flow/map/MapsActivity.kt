@@ -7,6 +7,7 @@ import android.widget.AutoCompleteTextView
 import com.alex.car.R
 import com.alex.car.base.BaseActivity
 import com.alex.car.databinding.ActivityMapsBinding
+import com.alex.car.extantions.toast
 import com.alex.car.util.END
 import com.alex.car.util.INTERMEDIATE
 import com.alex.car.util.START
@@ -16,7 +17,6 @@ import com.google.android.gms.maps.GoogleMap
 import com.google.android.gms.maps.OnMapReadyCallback
 import com.google.android.gms.maps.SupportMapFragment
 import com.google.android.gms.maps.model.*
-import java.util.ArrayList
 
 
 class MapsActivity : BaseActivity<ActivityMapsBinding, MapsViewModel>(), OnMapReadyCallback {
@@ -27,6 +27,7 @@ class MapsActivity : BaseActivity<ActivityMapsBinding, MapsViewModel>(), OnMapRe
 
     private var map: GoogleMap? = null
     private val markerList = ArrayList<Marker>()
+    private var car: Marker? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -60,6 +61,10 @@ class MapsActivity : BaseActivity<ActivityMapsBinding, MapsViewModel>(), OnMapRe
         moveCamera()
     }
 
+    private fun showPolilines(steps: ArrayList<LatLng>) {
+        map?.addPolyline(PolylineOptions().addAll(steps))
+    }
+
     private fun moveCamera() {
         if (markerList.isNotEmpty()) {
             val builder = LatLngBounds.Builder()
@@ -78,6 +83,23 @@ class MapsActivity : BaseActivity<ActivityMapsBinding, MapsViewModel>(), OnMapRe
             MarkerOptions()
                     .position(latLng)
                     .icon(BitmapDescriptorFactory.fromResource(R.drawable.ic_unselected_pin_for_map))
+
+    private fun runCar(steps: ArrayList<LatLng>) {
+        val options = MarkerOptions()
+                .position(steps.first())
+                .icon(BitmapDescriptorFactory.fromResource(R.drawable.car))
+        car = map?.addMarker(options)
+        Thread(Runnable {
+            steps.forEach {
+                runOnUiThread { car?.position = it }
+                Thread.sleep(100)
+            }
+            runOnUiThread {
+                toast("Save")
+                viewModel().saveRoute(steps)
+            }
+        }).start()
+    }
 
 
     //place chooser
@@ -100,8 +122,8 @@ class MapsActivity : BaseActivity<ActivityMapsBinding, MapsViewModel>(), OnMapRe
             val pos = list.indexOf(selected)
             val pointType = when (autoCompleteTextView.id) {
                 R.id.et_start -> START
-                R.id.et_end  -> END
-                R.id.et_interMediate  -> INTERMEDIATE
+                R.id.et_end -> END
+                R.id.et_interMediate -> INTERMEDIATE
                 else -> -1
             }
             viewModel().getCoordinatesByPlaceId(buffer[pos].placeId, pointType)
@@ -114,13 +136,18 @@ class MapsActivity : BaseActivity<ActivityMapsBinding, MapsViewModel>(), OnMapRe
 
     //viewModel callBack
     override fun getViewModelHandler() = object : MapsViewModel.Handler {
+        override fun showPin()
+                = this@MapsActivity.showPins()
+        override fun runCar(steps: ArrayList<LatLng>)
+                = this@MapsActivity.runCar(steps)
         override fun clearIntermediateText()
                 = this@MapsActivity.clearIntermediateText()
-        override fun showPin() = this@MapsActivity.showPins()
-        override fun showStartPlaces(buffer: AutocompletePredictionBuffer)
-                = this@MapsActivity.showPlaces(binding.etStart, buffer)
+        override fun showPolilines(steps: ArrayList<LatLng>)
+                = this@MapsActivity.showPolilines(steps)
         override fun showNextPlaces(buffer: AutocompletePredictionBuffer)
                 = this@MapsActivity.showPlaces(binding.etEnd, buffer)
+        override fun showStartPlaces(buffer: AutocompletePredictionBuffer)
+                = this@MapsActivity.showPlaces(binding.etStart, buffer)
         override fun showIntermediatePlaces(buffer: AutocompletePredictionBuffer)
                 = this@MapsActivity.showPlaces(binding.etInterMediate, buffer)
     }

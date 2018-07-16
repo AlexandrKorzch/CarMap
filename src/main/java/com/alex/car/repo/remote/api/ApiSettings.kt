@@ -3,14 +3,18 @@ package com.alex.car.repo.remote.api
 
 object ApiSettings {
 
-//    const val SOLT = "c6f7e8ad8706fe99eeeccdde6e2fd"
-//
     /*server*/
-    private const val SCHEME = "http://"
-    private const val HOSTNAME = "145.239.92.45/api/v1.0/"
+    private const val SCHEME = "https://"
+    private const val HOSTNAME = "maps.googleapis.com/"
     const val SERVER = SCHEME + HOSTNAME
-//
-//    /*methods*/
-//    const val FAQS = "faqs"
 
+    const val API_KEY = "AIzaSyBmbx43zpCPI-fsKX9inJIp_hVrgt9407A"
+
+    /*methods*/
+    const val ROUT = "maps/api/directions/json"
+
+    /*constants*/
+    const val ORIGIN = "origin"
+    const val DESTINATION = "destination"
+    const val KEY = "key"
 }
