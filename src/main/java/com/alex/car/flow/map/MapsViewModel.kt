@@ -10,6 +10,8 @@ import com.alex.car.R
 import com.alex.car.base.BaseHandler
 import com.alex.car.base.BaseViewModel
 import com.alex.car.repo.Repository
+import com.alex.car.repo.db.model.track.Segment
+import com.alex.car.repo.db.model.track.Track
 import com.alex.car.repo.remote.model.Rout
 import com.alex.car.util.END
 import com.alex.car.util.INTERMEDIATE
@@ -24,6 +26,7 @@ import com.google.android.gms.maps.model.LatLng
 import com.google.maps.android.PolyUtil
 import io.reactivex.Flowable
 import io.reactivex.android.schedulers.AndroidSchedulers
+import io.realm.RealmList
 
 
 class MapsViewModel(context: Application, repository: Repository)
@@ -32,11 +35,13 @@ class MapsViewModel(context: Application, repository: Repository)
 
     val MAX_INTERMADIATE = 3
 
+    private var connected: Boolean = false //not use
+
     var startPlace: LatLng? = null
     var endPlace: LatLng? = null
     var intermediatePlaces = ArrayList<LatLng>()
 
-    val connected = ObservableBoolean(false) // not use
+    val fromTrack = ObservableBoolean(false)
     val intermediateBt = ObservableBoolean(false)
     val addIntermediate = ObservableBoolean(false)
     val rase = ObservableBoolean(false)
@@ -70,11 +75,15 @@ class MapsViewModel(context: Application, repository: Repository)
                 .concat(getRoutFlowables(repository, startPlace, intermediatePlaces, endPlace))
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe({ onGetRout(it) },
-                        {hideProgress()
+                        {
+                            hideProgress()
                             showError(getApplication<Application>().getString(R.string.error))
-                            showError(it.message)},
-                        { hideProgress()
-                            showRouts()}))
+                            showError(it.message)
+                        },
+                        {
+                            hideProgress()
+                            showRouts()
+                        }))
     }
 
     private fun onGetRout(it: Rout?) {
@@ -85,6 +94,28 @@ class MapsViewModel(context: Application, repository: Repository)
         rase.set(true)
         getHandler().showPolilines(steps)
         getHandler().runCar(steps)
+    }
+
+
+    fun saveRoute(steps: ArrayList<LatLng>) {
+        val segments = RealmList<Segment>()
+        steps.forEachIndexed { index, latLng ->
+            segments.add(Segment(index.toLong(), latLng.latitude, latLng.longitude))
+        }
+        val track = Track(1L, segments)
+        repository.saveTrack(track)
+        fromTrack.set(true)
+    }
+
+    fun getSavedRoteClick() = getSavedRote()
+
+    private fun getSavedRote() {
+        addDisposable(repository.getTrack()
+                .subscribe {
+                    getHandler().showSavedTrack(it as ArrayList<LatLng>)
+                    getHandler().runCar(it)
+                }
+        )
     }
 
     private fun checkIntermediateAllow() {
@@ -138,7 +169,9 @@ class MapsViewModel(context: Application, repository: Repository)
         }
     }
 
-    override fun onConnected(p0: Bundle?) = connected.set(true)
+    override fun onConnected(p0: Bundle?) {
+        connected = true
+    }
 
     override fun onConnectionSuspended(p0: Int) {
         showError(getApplication<Application>().getString(R.string.connection_suspended))
@@ -148,12 +181,6 @@ class MapsViewModel(context: Application, repository: Repository)
         showError(getApplication<Application>().getString(R.string.connection_failed))
     }
 
-    fun saveRoute(steps: ArrayList<LatLng>) {//todo work here
-
-
-
-    }
-
 
     //callback
     interface Handler : BaseHandler {
@@ -161,9 +188,10 @@ class MapsViewModel(context: Application, repository: Repository)
         fun showNextPlaces(buffer: AutocompletePredictionBuffer)
         fun showIntermediatePlaces(buffer: AutocompletePredictionBuffer)
         fun showPolilines(steps: ArrayList<LatLng>)
+        fun showSavedTrack(steps: ArrayList<LatLng>)
+        fun runCar(steps: ArrayList<LatLng>)
         fun clearIntermediateText()
         fun showPin()
-        fun runCar(steps: ArrayList<LatLng>)
     }
 }
 

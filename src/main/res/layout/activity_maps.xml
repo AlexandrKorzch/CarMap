@@ -82,5 +82,18 @@
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintTop_toTopOf="parent"/>
 
+        <Button
+            android:id="@+id/from_db_bt"
+            android:layout_width="wrap_content"
+            android:layout_height="@dimen/_40sdp"
+            android:layout_marginEnd="8dp"
+            android:layout_marginRight="8dp"
+            android:layout_marginTop="80dp"
+            android:onClick="@{()-> viewModel.getSavedRoteClick()}"
+            android:text="@string/from_db_bt"
+            android:visibility="@{viewModel.fromTrack ? View.VISIBLE : View.GONE}"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toTopOf="parent"/>
+
     </android.support.constraint.ConstraintLayout>
 </layout>

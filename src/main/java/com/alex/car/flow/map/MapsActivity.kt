@@ -1,6 +1,7 @@
 package com.alex.car.flow.map
 
 import android.os.Bundle
+import android.support.v4.content.ContextCompat
 import android.widget.AdapterView
 import android.widget.ArrayAdapter
 import android.widget.AutoCompleteTextView
@@ -61,8 +62,15 @@ class MapsActivity : BaseActivity<ActivityMapsBinding, MapsViewModel>(), OnMapRe
         moveCamera()
     }
 
-    private fun showPolilines(steps: ArrayList<LatLng>) {
+    private fun showReseivedTrack(steps: ArrayList<LatLng>) {
         map?.addPolyline(PolylineOptions().addAll(steps))
+    }
+
+    private fun showSavedTrack(steps: ArrayList<LatLng>) {
+        clearMap()
+        map?.addPolyline(PolylineOptions()
+                .color(ContextCompat.getColor(this,R.color.colorPrimaryDark))
+                .addAll(steps))
     }
 
     private fun moveCamera() {
@@ -142,8 +150,10 @@ class MapsActivity : BaseActivity<ActivityMapsBinding, MapsViewModel>(), OnMapRe
                 = this@MapsActivity.runCar(steps)
         override fun clearIntermediateText()
                 = this@MapsActivity.clearIntermediateText()
+        override fun showSavedTrack(steps: ArrayList<LatLng>)
+                = this@MapsActivity.showSavedTrack(steps)
         override fun showPolilines(steps: ArrayList<LatLng>)
-                = this@MapsActivity.showPolilines(steps)
+                = this@MapsActivity.showReseivedTrack(steps)
         override fun showNextPlaces(buffer: AutocompletePredictionBuffer)
                 = this@MapsActivity.showPlaces(binding.etEnd, buffer)
         override fun showStartPlaces(buffer: AutocompletePredictionBuffer)
@@ -151,4 +161,5 @@ class MapsActivity : BaseActivity<ActivityMapsBinding, MapsViewModel>(), OnMapRe
         override fun showIntermediatePlaces(buffer: AutocompletePredictionBuffer)
                 = this@MapsActivity.showPlaces(binding.etInterMediate, buffer)
     }
+
 }

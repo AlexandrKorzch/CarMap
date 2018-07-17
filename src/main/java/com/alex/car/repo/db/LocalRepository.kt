@@ -1,6 +1,7 @@
 package com.alex.car.repo.db
 
 
+import com.alex.car.repo.db.model.track.Track
 import io.reactivex.BackpressureStrategy
 import io.reactivex.Flowable
 import io.reactivex.disposables.Disposables
@@ -35,70 +36,14 @@ object LocalRepository : LocalDataSource {
         }, BackpressureStrategy.LATEST)
     }
 
-//    /*ADVANTAGES*/
-//    override fun saveAdvantage(advantage: Advantage): AdvantageRealm {
-//        var savedAdvantage: AdvantageRealm = getRealmAdvantageFromAdvantage(advantage)
-//        realmTransaction { savedAdvantage = it.copyToRealmOrUpdate(savedAdvantage) }
-//        return savedAdvantage
-//    }
-//
-//    override fun getAdvantages(): Flowable<List<AdvantageRealm>> {
-//        return realm(false)
-//                .map { it.where<AdvantageRealm>().findAll().sort("id", Sort.ASCENDING) }
-//    }
-//
-//    /*BASKETS*/
-//    override fun addBasket(basket: Basket) {
-//        realmTransaction { it.insertOrUpdate(basket) }
-//    }
-//
-//    override fun getAllBaskets(): Flowable<MutableList<Basket>> {
-//        return realm(false).map { it.where<Basket>().findAll().toMutableList() }
-//    }
-//
-//    override fun getGoodsCount(): Flowable<Int> {
-//        return realm(true).map { it.where<Goods>().findAll().count() }
-//    }
-//
-//    override fun getGoodsCountInBasket(basketId: Long): Flowable<Int> {
-//        return realm(true)
-//                .map { it.where<Basket>().equalTo("id", basketId).findFirst()?.goods?.size
-//                        ?: 0 }
-//    }
-//
-//    override fun getBasketByIdOrCreate(placeId: Long): Flowable<Basket> {
-//        return realm(false)
-//                .map {it.where<Basket>().equalTo("id", placeId).findFirst()
-//                        ?: Basket(placeId)} }
-//
-//    override fun getBasketByIdOrFirst(placeId: Long): Flowable<Basket> {
-//        return LocalRepository.realm(true)
-//                .map {it.where<Basket>().equalTo("id", placeId).findFirst()
-//                        ?: it.where<Basket>().findFirst()} }
-//
-//    /*FILTER*/
-//    override fun updateFilter(filter: Filter) {
-//        realmTransaction { it.insertOrUpdate(filter) }
-//    }
-//
-//    override fun getFilter(): Flowable<Filter> {
-//        return realm(false).map { it.where<Filter>().findFirst() ?: Filter() }
-//    }
-//
-//    override fun removeType(id: Long) {
-//        realmTransaction { it.where<TypeIdNamePair>().equalTo("id", id).findAll().deleteAllFromRealm() }
-//    }
-//
-//    override fun removeKitchen(id: Long) {
-//        realmTransaction { it.where<KitchenIdNamePair>().equalTo("id", id).findAll().deleteAllFromRealm() }
-//    }
-//
-//    /*ORDER*/
-//    override fun setNewOrder(order: OrderDb) {
-//        realmTransaction { it.insertOrUpdate(order) }
-//    }
-//
-//    override fun getOrderById(id: Long) : Flowable<OrderDb>{
-//        return realm(false).map { it.where<OrderDb>().findFirst() }
-//    }
+    /*TRACK*/
+    override fun saveTrack(track: Track) {
+        realmTransaction { it.insertOrUpdate(track) }
+    }
+
+    override fun getTrack(): Flowable<Track> {
+                return realm(false)
+                .map { it.where(Track::class.java).findFirst()}
+    }
+
 }
